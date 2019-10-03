@@ -25,3 +25,38 @@ jobs:
     - name: List commits
       run: git log origin/$GITHUB_BASE_REF..HEAD
     - uses: ./commit-checker
+
+  commit-checker-2:
+    name: Commit checker 2
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Display some env vars
+      run: |
+        echo $HOME
+        echo $GITHUB_WORKSPACE
+    - name: Checkout commit-checker
+      uses: actions/checkout@v1
+      with:
+        repository: OpenTTD/OpenTTD-git-hooks
+        path: git-hooks
+        ref: master
+    - name: Checkout
+      uses: actions/checkout@v1
+      with:
+        ref: ${{ github.head_ref }}
+    - name: List commits
+      run: git log origin/$GITHUB_BASE_REF..HEAD
+    - name: Rebase to ${{ github.base_ref }} branch
+      run: |
+        git config user.email 'info@openttd.org'
+        git config user.name 'OpenTTD CI'
+        git rebase origin/$GITHUB_BASE_REF
+    - name: List commits again
+      run: git log origin/${GITHUB_BASE_REF}..HEAD
+    - name: Check commits
+      run: |
+        pwd
+        ls ..
+        HOOKS_DIR=../git-hooks/hooks GIT_DIR=.git ../git-hooks/hooks/check-commits.sh origin/${GITHUB_BASE_REF}..HEAD
