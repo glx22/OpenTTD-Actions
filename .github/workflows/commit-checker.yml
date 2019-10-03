@@ -1,0 +1,27 @@
+name: Commit checker
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  commit-checker:
+    name: Commit checker
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Dump GitHub context
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+      run: echo "$GITHUB_CONTEXT"
+    - name: Rebase to target branch
+      run: |
+        git config user.email 'info@openttd.org'
+        git config user.name 'OpenTTD CI'
+        git rebase origin/$GITHUB_BASE_REF
+    - name: List commits
+      run: git log origin/$GITHUB_BASE_REF..HEAD
+    - uses: ./commit-checker

@@ -1,0 +1,7 @@
+#!/bin/sh
+
+set -e
+
+HOOKS_DIR=${HOOKS_DIR:-${GIT_DIR}/hooks}
+
+${HOOKS_DIR}/check-message.py $1 client
