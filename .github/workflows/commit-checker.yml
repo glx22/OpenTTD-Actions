@@ -1,0 +1,56 @@
+name: Commit checker
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  commit-checker-docker:
+    name: Commit checker Docker
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Rebase to ${{ github.base_ref }} branch
+      run: |
+        git config user.email 'info@openttd.org'
+        git config user.name 'OpenTTD CI'
+        git rebase origin/$GITHUB_BASE_REF
+    - name: Check commits
+      uses: ./commit-checker
+
+  commit-checker-checkout:
+    name: Commit checker checkout
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Rebase to ${{ github.base_ref }} branch
+      run: |
+        git config user.email 'info@openttd.org'
+        git config user.name 'OpenTTD CI'
+        git rebase origin/$GITHUB_BASE_REF
+    - name: Checkout commit-checker
+      uses: actions/checkout@v1
+      with:
+        repository: OpenTTD/OpenTTD-git-hooks
+        path: git-hooks
+        ref: master
+    - name: Check commits
+      run: |
+        is_on_top_of_master=$(git branch $(git rev-parse --abbrev-ref HEAD) --contains origin/${GITHUB_BASE_REF} | wc -l)
+
+        if [ "${is_on_top_of_master}" -ne 1 ]; then
+            echo "ERROR: This commit is not on top of ${GITHUB_BASE_REF}"
+            echo "(no further validation is done due to this error)"
+            exit 1
+        fi
+        echo "Branch is on top of ${GITHUB_BASE_REF}"
+
+        HOOKS_DIR=../git-hooks/hooks GIT_DIR=.git ../git-hooks/hooks/check-commits.sh origin/${GITHUB_BASE_REF}..HEAD
+        echo "Commit checks passed"
